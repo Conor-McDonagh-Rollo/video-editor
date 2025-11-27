@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atlas Video Editor</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Chivo:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Chivo:wght@400;600&family=Archivo+Black&family=IBM+Plex+Mono:wght@600&family=Playfair+Display:wght@700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./style.css" />
+    <script src="/config.js"></script>
+    <script defer src="./app.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="dot"></div>
+        <div>
+          <p class="eyebrow">Serverless video editor thing.</p>
+          <h1>Soknee Vegoos Professional</h1>
+        </div>
+      </div>
+      <div class="status">
+        <span id="status-chip" class="chip">Idle</span>
+        <div class="status-text">
+          <p>Ready</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel upload">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Sources</p>
+            <h2>Upload</h2>
+          </div>
+          <div class="actions">
+            <label class="ghost-btn">
+              <input id="file-input" type="file" accept="video/*" multiple hidden />
+              <span>Browse</span>
+            </label>
+            <button class="ghost-btn" id="clear-library">Clear</button>
+          </div>
+        </div>
+
+        <div id="upload-zone" class="dropzone">
+          <p>Drop footage</p>
+        </div>
+
+        <div class="library">
+          <div class="library-head">
+            <p>Footage</p>
+            <small>Drag to timeline</small>
+          </div>
+          <ul id="library-list" class="library-list"></ul>
+        </div>
+      </section>
+
+      <section class="panel preview">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Preview</p>
+          </div>
+          <div class="clock">
+            <span id="time-readout">00:00 / 00:00</span>
+          </div>
+        </div>
+
+        <div class="preview-shell">
+          <video id="preview-video" crossorigin="anonymous" playsinline controls></video>
+          <div id="text-overlay" class="text-overlay"></div>
+          <div class="preview-overlay">Playback</div>
+        </div>
+
+        <div class="transport">
+          <div class="transport-left">
+            <button id="play-toggle" class="pill primary">Play</button>
+            <button id="step-back" class="pill">-1s</button>
+            <button id="step-forward" class="pill">+1s</button>
+          </div>
+          <div class="transport-mid">
+            <input id="scrub" type="range" min="0" max="0" value="0" step="0.01" />
+          </div>
+          <div class="transport-right">
+            <label class="pill ghost">
+              Speed
+              <select id="playback-rate">
+                <option value="0.5">0.5x</option>
+                <option value="1" selected>1x</option>
+                <option value="1.5">1.5x</option>
+                <option value="2">2x</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel timeline">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Timeline</p>
+            <h2>Tracks</h2>
+          </div>
+          <div class="actions">
+            <button id="split-btn" class="pill">Split at playhead</button>
+            <button id="remove-btn" class="pill ghost">Remove selected</button>
+          </div>
+        </div>
+
+        <div class="timeline-drop" id="timeline-drop">
+          <p>Drop clips anywhere on the tracks</p>
+        </div>
+        <div class="timeline-ruler" id="timeline-ruler">
+          <div class="playhead"></div>
+        </div>
+        <div class="text-controls">
+          <input id="text-content" type="text" placeholder="Add overlay text" />
+          <label>
+            Font
+            <select id="text-font"></select>
+          </label>
+          <label>
+            Layer
+            <select id="text-layer">
+              <option value="0">Base</option>
+              <option value="1" selected>Overlay</option>
+              <option value="2">Top</option>
+            </select>
+          </label>
+          <label>
+            Duration (s)
+            <input id="text-duration" type="number" min="1" max="30" value="3" />
+          </label>
+          <label class="color-label">
+            Color
+            <input id="text-color" type="color" value="#c4b5fd" />
+          </label>
+          <button id="add-text" class="pill">Add text clip</button>
+        </div>
+        <div class="track-list">
+          <div class="track-head">V1 (Video)</div>
+          <div id="timeline-video" class="timeline-track" data-track="video"></div>
+          <div class="track-head audio">A1 (Audio)</div>
+          <div id="timeline-audio" class="timeline-track audio" data-track="audio"></div>
+          <div class="track-head text">T1 (Text)</div>
+          <div id="timeline-text" class="timeline-track text" data-track="text"></div>
+        </div>
+
+        <div class="timeline-footer">
+          <div>
+            <p class="eyebrow">Selection</p>
+            <p id="selection-label">None</p>
+          </div>
+          <div id="duration-chip" class="chip">00:00</div>
+        </div>
+      </section>
+
+      <section class="panel export">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Export</p>
+            <h2>Server render (mp4)</h2>
+          </div>
+          <div class="actions">
+            <span class="chip muted" id="job-chip">No jobs</span>
+          </div>
+        </div>
+
+        <div class="export-note">
+          <p>Format: mp4</p>
+        </div>
+
+        <div class="progress">
+          <div id="progress-fill"></div>
+          <span id="progress-label">Idle</span>
+        </div>
+
+        <div class="export-actions">
+          <button id="send-backend" class="pill primary">Render on server</button>
+          <a id="download-link" class="pill download" hidden download>Download mp4</a>
+        </div>
+
+        <div class="log" id="log"></div>
+      </section>
+    </main>
+  </body>
+</html>
