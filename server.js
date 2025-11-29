@@ -1,8 +1,6 @@
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
-const multer = require('multer');
-const { v4: uuid } = require('uuid');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,7 +29,6 @@ app.get('/config.js', (_req, res) => {
   res.type('application/javascript').send(`window.APP_CONFIG=${JSON.stringify(config)};`);
 });
 app.use('/fonts', express.static(path.join(__dirname, 'fonts')));
-const upload = multer({ dest: path.join(__dirname, 'uploads') });
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, time: new Date().toISOString() });
@@ -39,21 +36,6 @@ app.get('/api/health', (_req, res) => {
 
 app.get('/api/fonts', (_req, res) => {
   res.json(listFonts());
-});
-
-app.get('/api/exports/:id', (req, res) => {
-  const job = jobs.get(req.params.id);
-  if (!job) {
-    return res.status(404).json({ error: 'Job not found' });
-  }
-  res.json({
-    exportId: job.exportId,
-    status: job.status,
-    progress: job.progress,
-    downloadUrl: job.downloadUrl,
-    logUrl: job.logUrl,
-    error: job.error,
-  });
 });
 
 app.use((_req, res) => {
