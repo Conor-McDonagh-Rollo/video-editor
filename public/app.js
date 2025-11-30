@@ -604,15 +604,20 @@
         progressFill.style.width = `${pct}%`;
         progressLabel.textContent = `${pct}% ${json.status}`;
         statusChip.textContent = json.status;
-        if (json.status === 'complete' && json.downloadUrl) {
+        if (json.status === 'complete') {
           clearInterval(state.pollHandle);
           state.pollHandle = null;
-          downloadLink.href = json.downloadUrl;
-          downloadLink.download = `${jobId}.mp4`;
-          downloadLink.hidden = false;
-          log(`Render ready: ${json.downloadUrl}`);
+          if (json.downloadUrl) {
+            downloadLink.href = json.downloadUrl;
+            downloadLink.download = `${jobId}.mp4`;
+            downloadLink.hidden = false;
+            log(`Render ready: ${json.downloadUrl}`);
+          } else {
+            downloadLink.hidden = true;
+            log('Job complete (no download URL provided by backend).');
+          }
           if (json.logUrl) log(`ffmpeg log: ${json.logUrl}`);
-          updateStatus('Render ready (server)');
+          updateStatus('Render complete');
         }
         if (json.status === 'error') {
           clearInterval(state.pollHandle);
