@@ -43,5 +43,5 @@ app.use((_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Video editor ready on http://localhost:${PORT}`);
+  console.log(`Rendero ready on http://localhost:${PORT}`);
 });

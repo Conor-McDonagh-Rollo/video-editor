@@ -1,4 +1,3 @@
-// Entry point: encapsulate UI logic to avoid leaking globals
 (() => {
   const previewVideo = document.getElementById('preview-video');
   const libraryList = document.getElementById('library-list');
@@ -39,7 +38,6 @@
   let availableFonts = [];
   let rulerPlayhead = null;
 
-  // Shared state container (single-responsibility: data only)
   const config = window.APP_CONFIG || {};
   const state = {
     files: [],
@@ -55,7 +53,6 @@
   hiddenAudio.crossOrigin = 'anonymous';
   hiddenAudio.playsInline = true;
 
-  // lightweight logger for UI panel
   const log = (message) => {
     const ts = new Date().toLocaleTimeString();
     logEl.textContent = `[${ts}] ${message}\n` + logEl.textContent;
@@ -137,7 +134,6 @@
     seekGlobal(seconds, true);
   };
 
-  // Allow ruler drag to scrub playhead without interfering with clip drag
   const enablePlayheadDrag = (el) => {
     let dragging = false;
     el.addEventListener('mousedown', (e) => {
@@ -267,7 +263,6 @@
     log(`Text clip added (${duration}s).`);
   };
 
-  // Timeline renderer: positions clips by duration and current playhead
   const renderTimeline = () => {
     const total = totalDuration() || 1;
     const pxPerSecond = Math.max(8, Math.min(30, 900 / Math.max(total, 8)));
@@ -441,6 +436,28 @@
     hiddenAudio.pause();
     playToggle.textContent = 'Play';
     updateStatus('Idle');
+  };
+
+  const downloadRender = async () => {
+    const url = downloadLink.href;
+    if (!url) return;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error(`Download failed (${res.status})`);
+      }
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = downloadLink.getAttribute('download') || 'render.mp4';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+      log('Download started.');
+    } catch (err) {
+      log(`Download error: ${err.message}`);
+    }
   };
 
   const splitAtPlayhead = () => {
@@ -637,7 +654,6 @@
     }, 1200);
   };
 
-  // Kick off server-side render with assets and timeline manifest
   const sendToBackend = async () => {
     if (!totalDuration()) {
       log('Timeline is empty; nothing to send.');
@@ -691,7 +707,6 @@
       ...payload.timeline.audio.map((c) => c.sourceId),
     ]);
 
-    // Build asset keys and request job
     const sanitizeKey = (name) => name.replace(/[^A-Za-z0-9._-]/g, '_');
 
     const assets = state.files
@@ -725,7 +740,6 @@
       jobChip.classList.remove('muted');
       downloadLink.hidden = true;
       resetProgress();
-      // Upload each asset to its presigned URL
       updateStatus('Uploading assets');
       for (const { key, file, contentType } of assets) {
         const match = uploadUrls.find((u) => u.key === key);
@@ -791,7 +805,6 @@
   };
 
   const bindEvents = () => {
-    // Populate fonts from backend (fonts/ directory)
     fetch('/api/fonts')
       .then((r) => r.json())
       .then((fonts) => {
@@ -838,6 +851,10 @@
     splitBtn.addEventListener('click', splitAtPlayhead);
     removeBtn.addEventListener('click', removeSelected);
     sendBackendBtn.addEventListener('click', sendToBackend);
+    downloadLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      downloadRender();
+    });
     timelineDrop.addEventListener('click', () => {
       if (!totalDuration()) setSelection(null, null);
     });
