@@ -726,7 +726,6 @@
         const putRes = await fetch(match.url, {
           method: 'PUT',
           body: file.file,
-          headers: { 'Content-Type': file.file.type || 'application/octet-stream' },
         });
         if (!putRes.ok) {
           throw new Error(`Upload failed for ${file.name} (${putRes.status})`);
