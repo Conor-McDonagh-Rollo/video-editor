@@ -719,12 +719,18 @@
       updateStatus('Uploading assets');
       for (const { key, file } of assets) {
         const match = uploadUrls.find((u) => u.key === key);
-        if (!match || !match.url) continue;
-        await fetch(match.url, {
+        if (!match || !match.url) {
+          log(`No upload URL for ${key}; skipping.`);
+          continue;
+        }
+        const putRes = await fetch(match.url, {
           method: 'PUT',
           body: file.file,
           headers: { 'Content-Type': file.file.type || 'application/octet-stream' },
         });
+        if (!putRes.ok) {
+          throw new Error(`Upload failed for ${file.name} (${putRes.status})`);
+        }
       }
 
       monitorJob(jobId);
