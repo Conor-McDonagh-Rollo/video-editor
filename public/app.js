@@ -173,9 +173,10 @@
   const addFiles = (files) => {
     Array.from(files).forEach((file) => {
       const url = URL.createObjectURL(file);
+      const safeName = file.name;
       const entry = {
         id: generateId(),
-        name: file.name,
+        name: safeName,
         size: file.size,
         file,
         url,
@@ -691,9 +692,18 @@
     ]);
 
     // Build asset keys and request job
+    const sanitizeKey = (name) => name.replace(/[^A-Za-z0-9._-]/g, '_');
+
     const assets = state.files
       .filter((f) => usedSourceIds.has(f.id))
-      .map((f) => ({ file: f, key: `uploads/${f.id}-${f.name}` }));
+      .map((f) => {
+        const safeName = sanitizeKey(f.name);
+        return {
+          file: f,
+          key: `uploads/${f.id}-${safeName}`,
+          contentType: f.file.type || 'application/octet-stream',
+        };
+      });
 
     updateStatus('Requesting presigned URLs');
     log('Requesting job and presigned uploads…');
@@ -702,7 +712,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          assets: assets.map((a) => a.key),
+          assets: assets.map((a) => ({ key: a.key, contentType: a.contentType })),
           timeline: payload.timeline,
         }),
       });
@@ -717,18 +727,32 @@
       resetProgress();
       // Upload each asset to its presigned URL
       updateStatus('Uploading assets');
-      for (const { key, file } of assets) {
+      for (const { key, file, contentType } of assets) {
         const match = uploadUrls.find((u) => u.key === key);
         if (!match || !match.url) {
           log(`No upload URL for ${key}; skipping.`);
           continue;
         }
+        const targetHost = (() => {
+          try {
+            return new URL(match.url).host;
+          } catch {
+            return 'unknown-host';
+          }
+        })();
+        log(`Uploading ${file.name} -> ${key} @ ${targetHost}`);
         const putRes = await fetch(match.url, {
           method: 'PUT',
           body: file.file,
+          headers: contentType ? { 'Content-Type': contentType } : undefined,
         });
         if (!putRes.ok) {
-          throw new Error(`Upload failed for ${file.name} (${putRes.status})`);
+          let detail = '';
+          try {
+            const txt = await putRes.text();
+            if (txt) detail = ` - ${txt}`;
+          } catch {}
+          throw new Error(`Upload failed for ${file.name} (${putRes.status})${detail}`);
         }
       }
 
